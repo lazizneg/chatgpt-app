@@ -1,23 +1,21 @@
 import bot from './assets/bot.svg'
 import user from './assets/user.svg'
 
-const form = document.querySelector('form');
-const chatContainer = document.querySelector('#chat_container');
+const form = document.querySelector('form')
+const chatContainer = document.querySelector('#chat_container')
 
-let loadInterval;
+let loadInterval
 
 function loader(element) {
-  element.textContent = '';
+  element.textContent = ''
 
   loadInterval = setInterval(() => {
-    // updates the text content for the loading indicator
     element.textContent += '.';
 
-    // resets the loading indicator when it reaches three dots
     if (element.textContent === '....') {
       element.textContent = '';
     }
-  }, 300)
+  }, 300);
 }
 
 function typeText(element, text) {
@@ -33,7 +31,6 @@ function typeText(element, text) {
   }, 20)
 }
 
-// generates a unique ID for each message
 function generateUniqueId() {
   const timestamp = Date.now();
   const randomNumber = Math.random();
@@ -42,49 +39,70 @@ function generateUniqueId() {
   return `id-${timestamp}-${hexadecimalString}`;
 }
 
-// generates an HTML template for a chat message bubble
 function chatStripe(isAi, value, uniqueId) {
   return (
     `
-      <div class="wrapper ${isAi && 'ai'}">
-        <div class="chat">
-            <div class="profile">
-              <img 
-                src=${isAi ? bot : user} 
-                alt="${isAi ? 'bot' : 'user'}" 
-              />
-            </div>
-          <div class="message" id=${uniqueId}>${value}</div>
+    <div class="wrapper ${isAi && 'ai'}">
+      <div class="chat">
+        <div class="profile">
+          <img 
+            src=${isAi ? bot : user} 
+            alt="${isAi ? 'bot' : 'user'}" 
+          />
         </div>
+        <div class="message" id=${uniqueId}>${value}</div>
       </div>
+    </div>
     `
   )
 }
 
 const handleSubmit = async (e) => {
-  e.preventDefault();
+  e.preventDefault()
 
   const data = new FormData(form)
 
-  // users chatstripe
-  chatContainer.innerHTML += chatStripe(false, data.get('prompt'))
+  // user chatstripe
+  chatContainer.innerHTML += chatStripe(false, data.get('prompt')) 
   form.reset()
 
-  // bots chatstripe
+  // bot's chatstripe
   const uniqueId = generateUniqueId()
   chatContainer.innerHTML += chatStripe(true, " ", uniqueId)
 
-  // gets the message
   chatContainer.scrollTop = chatContainer.scrollHeight;
   const messageDiv = document.getElementById(uniqueId)
 
   loader(messageDiv)
+  const response = await fetch('http://localhost:5000/', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      prompt: data.get('prompt')
+    })
+  })
 
+  clearInterval(loadInterval)
+  messageDiv.innerHTML = " "
+
+  if (response.ok) {
+    const data = await response.json();
+    const parsedData = data.bot.trim();
+
+    typeText(messageDiv, parsedData)
+  } else {
+    const err = await response.text()
+
+    messageDiv.innerHTML = "Something Went Wrong"
+    alert(err)
+  }
 }
 
 form.addEventListener('submit', handleSubmit)
 form.addEventListener('keyup', (e) => {
   if (e.keyCode === 13) {
-      handleSubmit(e)
+    handleSubmit(e)
   }
 })
