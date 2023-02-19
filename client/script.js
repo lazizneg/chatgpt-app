@@ -75,14 +75,14 @@ const handleSubmit = async (e) => {
 
   loader(messageDiv)
   const response = await fetch('https://codex-9fvn.onrender.com/', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      prompt: data.get('prompt')
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            prompt: data.get('prompt')
+        })
     })
-  })
 
   clearInterval(loadInterval)
   messageDiv.innerHTML = " "
